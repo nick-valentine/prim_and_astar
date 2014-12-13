@@ -14,7 +14,7 @@ Maze::Maze()
 Maze::Maze( int width, int height )
 {
 	this->maze_ = new MazeElement[ height * width ];
-	
+
 	for(int i = 0; i < width; ++i)
 	{
 		for(int j = 0; j < height; ++j)
@@ -22,12 +22,17 @@ Maze::Maze( int width, int height )
 			this->maze_[i * width + j] = MazeElement(i, j);
 		}
 	}
-	
+
 	maker_ = MazeMaker( maze_, width, height, width / 2, height / 2 );
-	
+
 	this->width_ = width;
 	this->height_ = height;
-	
+
+	start_x_ = 0;
+	start_y_ = 0;
+	stop_x_ = 0;
+	stop_y_ = 0;
+
 	done_generating_ = false;
 	auto_generate_ = false;
 	solving_ = false;
@@ -41,16 +46,21 @@ Maze::Maze( const Maze &RHS )
 	{
 		delete[] maze_;
 	}
-	
+
 	width_ = RHS.width_;
 	height_ = RHS.height_;
-	
+
+	start_x_ = RHS.start_x_;
+	start_y_ = RHS.start_y_;
+	stop_x_ = RHS.stop_x_;
+	stop_y_ = RHS.stop_y_;
+
 	done_generating_ = RHS.done_generating_;
 	auto_generate_ = RHS.auto_generate_;
-	
+
 	maze_ = new MazeElement[ height_ * width_ ];
-	
-	
+
+
 	for(int i = 0; i < width_ * height_; ++i)
 	{
 			maze_[i] = RHS.maze_[i];
@@ -72,7 +82,7 @@ void Maze::draw( sf::RenderWindow &window)
 
 void Maze::update( sf::RenderWindow &window )
 {
-	
+
 	if( !done_generating_ )
 	{
 		if( auto_generate_ )
@@ -84,13 +94,13 @@ void Maze::update( sf::RenderWindow &window )
 				{
 					maze_[i].setState( MazeElement::Wall );
 				}
-				
+
 				maker_ = MazeMaker( maze_, width_, height_, width_ / 2, height_ / 2 );
 				first_generate_run_ = false;
 			}
-		
+
 			done_generating_ = !maker_.update( maze_ );
-			
+
 			if( done_generating_ )
 			{
 				start_x_ = maker_.getStartX();
@@ -105,7 +115,7 @@ void Maze::update( sf::RenderWindow &window )
 			//if the mouse button is being pressed, we want to draw
 			//so get the mouse position
 			sf::Vector2i mouse = sf::Mouse::getPosition( window );
-		
+
 			//convert the mouse position to an x and y coordinate in our
 			//array of MazeElements
 			int x = mouse.x / MazeElement::getWidth();
@@ -127,7 +137,7 @@ void Maze::update( sf::RenderWindow &window )
 						drawing_state_ = MazeElement::Wall;
 					}
 				}
-				
+
 				//draw the current state out to wherever the mouse is
 				maze_[ index( x, y, width_ ) ].setState( drawing_state_ );
 			}
@@ -137,7 +147,7 @@ void Maze::update( sf::RenderWindow &window )
 			//if the mouse is no longer being pressed, change the drawing state
 			drawing_state_ = MazeElement::None;
 		}
-		
+
 		if( !auto_generate_ && !solving_ )
 		{
 			if( sf::Keyboard::isKeyPressed( sf::Keyboard::Q ) )
@@ -153,19 +163,19 @@ void Maze::update( sf::RenderWindow &window )
 			else if( sf::Keyboard::isKeyPressed( sf::Keyboard::Num1 ) )
 			{
 				//place start block
-			
-			
+
+
 				//if the mouse button is being pressed, we want to draw
 				//so get the mouse position
 				sf::Vector2i mouse = sf::Mouse::getPosition( window );
-			
+
 				//convert the mouse position to an x and y coordinate in our
 				//array of MazeElements
 				int x = mouse.x / MazeElement::getWidth();
 				int y = mouse.y / MazeElement::getHeight();
-			
+
 				if( x < width_ && y < height_ &&
-					x > 0      && y > 0)
+					x >= 0      && y >= 0)
 				{
 					//draw the current state out to wherever the mouse is
 					maze_[ index( x, y, width_ ) ].setState( MazeElement::Floor );
@@ -178,18 +188,18 @@ void Maze::update( sf::RenderWindow &window )
 			else if( sf::Keyboard::isKeyPressed( sf::Keyboard::Num2 ) )
 			{
 				//place stop block
-			
+
 				//if the mouse button is being pressed, we want to draw
 				//so get the mouse position
 				sf::Vector2i mouse = sf::Mouse::getPosition( window );
-			
+
 				//convert the mouse position to an x and y coordinate in our
 				//array of MazeElements
 				int x = mouse.x / MazeElement::getWidth();
 				int y = mouse.y / MazeElement::getHeight();
-			
+
 				if( x < width_ && y < height_ &&
-					x > 0      && y > 0)
+					x >= 0      && y >= 0)
 				{
 					//draw the current state out to wherever the mouse is
 					maze_[ index( x, y, width_ ) ].setState( MazeElement::Floor );
@@ -208,14 +218,14 @@ void Maze::update( sf::RenderWindow &window )
 			solver_ = AStar( maze_, height_, width_,
 							 start_x_, start_y_,
 							 stop_x_, stop_y_ );
-							 
+
 			 first_solving_run_ = false;
 		}
 
-	
+
 		solving_ = !solver_.update( maze_ );
 	}
-	
+
 	if( sf::Keyboard::isKeyPressed( sf::Keyboard::C ) )
 	{
 		//clear
@@ -224,7 +234,7 @@ void Maze::update( sf::RenderWindow &window )
 		done_generating_ = false;
 		first_generate_run_ = true;
 		first_solving_run_ = true;
-		
+
 		for( int i = 0; i < height_ * width_; ++i)
 		{
 			maze_[i].setState( MazeElement::Floor );
@@ -247,7 +257,7 @@ void Maze::update( sf::RenderWindow &window )
 		done_generating_ = false;
 		first_generate_run_ = true;
 		first_solving_run_ = true;
-		
+
 		for( int i = 0; i < height_ * width_; ++i)
 		{
 			maze_[i].resetColor();

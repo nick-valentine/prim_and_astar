@@ -18,22 +18,22 @@ MazeMaker::MazeMaker( MazeElement *maze, int width, int height, int x, int y )
 {
 	this->width_ = width;
 	this->height_ = height;
-	
+
 	maze_list_x_.push_back( x );
 	maze_list_y_.push_back( y );
 	maze[ index( x, y, width ) ].setState( MazeElement::Floor );
 	maze[ index( x, y, width ) ].setColor( start_block );
-	
+
 	start_x_ = x;
 	start_y_ = y;
-	
+
 	stop_x_ = -1;
 	stop_y_ = -1;
-	
+
 	add_walls( maze, x, y );
-	
+
 	srand( time( NULL ) );
-	
+
 	for(int i = 0; i < height * width; ++i)
 	{
 		random_weights_.push_back( rand() % 1000 );
@@ -59,7 +59,7 @@ bool MazeMaker::update( MazeElement *maze )
 		{
 			x = wall_list_x_[i];
 			y = wall_list_y_[i];
-			
+
 			if( random_weights_[ index( x, y, width_ ) ] < min )
 			{
 				min = random_weights_[ index( x, y, width_ ) ];
@@ -67,17 +67,17 @@ bool MazeMaker::update( MazeElement *maze )
 				list_index = i;
 			}
 		}
-		
-		if(min_index >= 0)
+
+		if(min_index >= 0 && min_index < width_ * height_ )
 		{
 			int x = min_index / width_;
 			int y = min_index % width_;
 			bool making_floor = false;
-		
+
 			if(count_touching_floors( maze, x, y ) <= 1)
 			{
 				maze[ min_index ].setState( MazeElement::Floor );
-				
+
 				//keep track of last floor placed so it will be the stop block
 				if( stop_x_ != -1 )
 				{
@@ -87,18 +87,18 @@ bool MazeMaker::update( MazeElement *maze )
 				stop_y_ = y;
 				maze[ index( stop_x_, stop_y_, width_ ) ].setColor(stop_block);
 				making_floor = true;
-				
+
 				maze_list_x_.push_back( x );
 				maze_list_y_.push_back( y );
 				add_walls( maze, x, y );
 			}
 			random_weights_[min_index] = 1001;
-			
+
 			if( !making_floor )
 			{
 				maze[ min_index ].resetColor();
 			}
-			
+
 			wall_list_x_[ list_index ] = wall_list_x_[ wall_list_x_.size() - 1 ];
 			wall_list_y_[ list_index ] = wall_list_y_[ wall_list_y_.size() - 1 ];
 			wall_list_x_.pop_back();
@@ -108,7 +108,7 @@ bool MazeMaker::update( MazeElement *maze )
 	}
 }
 
-	
+
 int MazeMaker::getStartX()
 {
 	return this->start_x_;
@@ -131,7 +131,6 @@ int MazeMaker::getStopY()
 
 void MazeMaker::add_walls( MazeElement *maze, int x, int y )
 {
-	
 	//wall on top of x,y
 	if(y > 0 )
 	{
@@ -146,7 +145,7 @@ void MazeMaker::add_walls( MazeElement *maze, int x, int y )
 			#endif
 		}
 	}
-	
+
 	//wall below x,y
 	if(y < height_ - 1 )
 	{
@@ -161,7 +160,7 @@ void MazeMaker::add_walls( MazeElement *maze, int x, int y )
 			#endif
 		}
 	}
-	
+
 	//wall left of x,y
 	if( x > 0 )
 	{
@@ -176,7 +175,7 @@ void MazeMaker::add_walls( MazeElement *maze, int x, int y )
 			#endif
 		}
 	}
-	
+
 	//wall right of x,y
 	if( x < width_ - 1 )
 	{
@@ -220,7 +219,7 @@ MazeMaker::Side MazeMaker::find_touching_maze( MazeElement *maze, int x, int y )
 int MazeMaker::count_touching_floors( MazeElement *maze, int x, int y )
 {
 	int i = 0;
-	if( x < width_ && maze[ index( x + 1, y, width_ ) ].getState() == MazeElement::Floor )
+	if( x < width_ - 1 && maze[ index( x + 1, y, width_ ) ].getState() == MazeElement::Floor )
 	{
 		i++;
 	}
@@ -232,14 +231,14 @@ int MazeMaker::count_touching_floors( MazeElement *maze, int x, int y )
 	{
 		i++;
 	}
-	if( y < height_ && maze[ index( x, y + 1, width_ ) ].getState() == MazeElement::Floor )
+	if( y < height_ - 1 && maze[ index( x, y + 1, width_ ) ].getState() == MazeElement::Floor )
 	{
 		i++;
 	}
-	
+
 	#ifndef DENSE_MAZE
 	int j = 0;
-	
+
 	//count corners too
 	if( x < width_ && y < height_ && maze[ index( x + 1, y + 1, width_ ) ].getState() == MazeElement::Floor )
 	{
@@ -257,14 +256,14 @@ int MazeMaker::count_touching_floors( MazeElement *maze, int x, int y )
 	{
 		j++;
 	}
-	
+
 	if( j % 2 != 0 )
 	{
 		i += j;
 	}
-	
+
 	#endif //DENSE_MAZE
-	
+
 	return i;
 }
 
@@ -287,7 +286,7 @@ bool MazeMaker::traverse( MazeMaker::Side goTo, int *x, int *y )
 	{
 		*x = std::max( *x - 1, 0 );
 	}
-	
+
 	if( x_ == *x && y_ == *y )
 	{
 		//traversal unsuccessful
@@ -352,33 +351,33 @@ MazeMaker::Side MazeMaker::get_min_adj_weight( int x, int y )
 {
 	int top, bottom, left, right;
 	top = bottom = left = right = 9999999;
-	
+
 	if( y > 0 )
 	{
 		top = random_weights_[ index( x, y - 1, width_ ) ];
 	}
-	
+
 	if( y < height_ - 1 )
 	{
 		bottom = random_weights_[ index( x, y + 1, width_ ) ];
 	}
-	
+
 	if( x > 0 )
 	{
 		left = random_weights_[ index( x - 1, y, width_) ];
 	}
-	
+
 	if( x < width_ - 1 )
 	{
 		right = random_weights_[ index( x + 1, y, width_) ];
 	}
-	
+
 	int min = 9999999;
 	min = ( top < min ) ? top  : min;
 	min = ( bottom < min ) ? bottom : min;
 	min = ( left < min ) ? left : min;
 	min = ( right < min ) ? right : min;
-	
+
 	if( min == top )
 	{
 		return North;
